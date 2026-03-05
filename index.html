@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Dino 2 Player</title>
+
+<style>
+
+body{
+font-family:Arial;
+text-align:center;
+background:white;
+}
+
+canvas{
+border:2px solid black;
+border-radius:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Dino 2 Giocatori</h2>
+
+<p>
+G1: W salto | S abbassarsi
+<br>
+G2: ↑ salto | ↓ abbassarsi
+<br>
+Premi R per restart
+</p>
+
+<canvas id="game"></canvas>
+
+<script>
+
+const canvas = document.getElementById("game")
+const ctx = canvas.getContext("2d")
+
+canvas.width = window.innerWidth * 0.9
+canvas.height = 400
+
+const ground1 = 150
+const ground2 = 320
+
+const gravity = 1
+
+let speed = 8
+
+function createPlayer(x,ground,color){
+
+return{
+x:x,
+y:ground-40,
+vy:0,
+ground:ground,
+duck:false,
+alive:true,
+color:color
+}
+
+}
+
+let p1 = createPlayer(80,ground1,"black")
+let p2 = createPlayer(80,ground2,"green")
+
+let obstacles=[]
+
+function spawnObstacle(){
+
+let type = Math.random()<0.5 ? "low":"high"
+
+obstacles.push({
+x:canvas.width,
+type:type
+})
+
+}
+
+setInterval(spawnObstacle,1500)
+
+document.addEventListener("keydown",e=>{
+
+if(e.key==="w") jump(p1)
+if(e.key==="ArrowUp") jump(p2)
+
+if(e.key==="s") p1.duck=true
+if(e.key==="ArrowDown") p2.duck=true
+
+if(e.key==="r") restart()
+
+})
+
+document.addEventListener("keyup",e=>{
+
+if(e.key==="s") p1.duck=false
+if(e.key==="ArrowDown") p2.duck=false
+
+})
+
+function jump(p){
+
+if(p.y>=p.ground-40){
+p.vy=-18
+}
+
+}
+
+function updatePlayer(p){
+
+p.vy+=gravity
+p.y+=p.vy
+
+if(p.y>p.ground-40){
+p.y=p.ground-40
+p.vy=0
+}
+
+}
+
+function drawPlayer(p){
+
+let height = p.duck ? 20 : 40
+
+ctx.fillStyle=p.color
+
+ctx.fillRect(p.x,p.y+(40-height),30,height)
+
+}
+
+function updateObstacles(){
+
+for(let o of obstacles){
+
+o.x-=speed
+
+}
+
+}
+
+function drawObstacles(){
+
+ctx.fillStyle="gray"
+
+for(let o of obstacles){
+
+if(o.type==="low"){
+
+ctx.fillRect(o.x,ground1-30,20,30)
+ctx.fillRect(o.x,ground2-30,20,30)
+
+}
+
+else{
+
+ctx.fillRect(o.x,ground1-70,30,20)
+ctx.fillRect(o.x,ground2-70,30,20)
+
+}
+
+}
+
+}
+
+function checkCollision(p){
+
+for(let o of obstacles){
+
+let px=p.x
+let py=p.y
+let pw=30
+let ph=p.duck?20:40
+
+let ox=o.x
+let oy
+let ow
+let oh
+
+if(o.type==="low"){
+
+oy=p.ground-30
+ow=20
+oh=30
+
+}else{
+
+oy=p.ground-70
+ow=30
+oh=20
+
+}
+
+if(px < ox+ow &&
+px+pw > ox &&
+py < oy+oh &&
+py+ph > oy){
+
+p.alive=false
+
+}
+
+}
+
+}
+
+function restart(){
+
+p1 = createPlayer(80,ground1,"black")
+p2 = createPlayer(80,ground2,"green")
+
+obstacles=[]
+
+}
+
+function drawGround(){
+
+ctx.strokeStyle="black"
+
+ctx.beginPath()
+ctx.moveTo(0,ground1)
+ctx.lineTo(canvas.width,ground1)
+ctx.stroke()
+
+ctx.beginPath()
+ctx.moveTo(0,ground2)
+ctx.lineTo(canvas.width,ground2)
+ctx.stroke()
+
+}
+
+function loop(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+drawGround()
+
+updatePlayer(p1)
+updatePlayer(p2)
+
+updateObstacles()
+
+drawObstacles()
+
+drawPlayer(p1)
+drawPlayer(p2)
+
+if(p1.alive) checkCollision(p1)
+if(p2.alive) checkCollision(p2)
+
+if(!p1.alive || !p2.alive){
+
+ctx.font="40px Arial"
+
+let text = p1.alive ? "Vince G1" : "Vince G2"
+
+ctx.fillText(text,canvas.width/2-100,50)
+
+}
+
+requestAnimationFrame(loop)
+
+}
+
+loop()
+
+</script>
+
+</body>
+</html>
